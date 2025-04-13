@@ -1,0 +1,55 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block content %}
+<h1>Dashboard</h1>
+<div class="container">
+    <!-- Notifications -->
+    {% if notifications %}
+        <h3>Notifications</h3>
+        <ul class="list-group">
+            {% for notification in notifications %}
+                <li class="list-group-item">
+                    Warranty for {{ notification.warranty_card.bill.items|truncatechars:50 }} expires on {{ notification.warranty_card.warranty_end_date|date:'Y-m-d' }}.
+                </li>
+            {% empty %}
+                <li class="list-group-item">No upcoming warranty expirations.</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <!-- Bills List -->
+    <h3>Your Bills</h3>
+    {% if bills %}
+        <div class="list-group">
+            {% for bill in bills %}
+                <div class="list-group-item">
+                    <h4>{{ bill.shop_name }} - {{ bill.bill_date|date:'Y-m-d' }}</h4>
+                    <p>Total Amount: {{ bill.total_amount }}</p>
+                    <p>Items: {{ bill.items|truncatechars:100 }}</p>
+                    <div class="row">
+                        <!-- Bill Image -->
+                        <div class="col-md-6 mb-3 position-relative">
+                            <img src="{{ bill.bill_image.url }}" alt="Bill Image" class="img-fluid" style="max-width: 200px; max-height: 200px; object-fit: cover;">
+                            <a href="{{ bill.bill_image.url }}" download class="btn btn-sm btn-primary position-absolute" style="top: 5px; right: 5px;">Download</a>
+                        </div>
+                        <!-- Warranty Image (if exists) -->
+                        {% if bill.warrantycard and bill.warrantycard.warranty_image %}
+                            <div class="col-md-6 mb-3 position-relative">
+                                <img src="{{ bill.warrantycard.warranty_image.url }}" alt="Warranty Image" class="img-fluid" style="max-width: 200px; max-height: 200px; object-fit: cover;">
+                                <a href="{{ bill.warrantycard.warranty_image.url }}" download class="btn btn-sm btn-primary position-absolute" style="top: 5px; right: 5px;">Download</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <a href="{% url 'edit_bill' bill.id %}" class="btn btn-info">Edit</a>
+                    <a href="{% url 'delete_bill' bill.id %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this bill?');">Delete</a>
+                    {% if bill.warrantycard %}
+                        <a href="{% url 'share_warranty' bill.warrantycard.id %}" class="btn btn-success">Share</a>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No bills uploaded yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

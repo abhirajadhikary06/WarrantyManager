@@ -1,0 +1,178 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block content %}
+<h1>Upload Bill</h1>
+<div class="container">
+    <div class="row">
+        <!-- Full-width Form -->
+        <div class="col-md-12">
+            <h3>Enter Bill Details</h3>
+            <div id="error-message" class="alert alert-danger" style="display: none;"></div>
+            <form method="POST" enctype="multipart/form-data" id="upload-form">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="id_bill_image" class="form-label">Bill Image (Required)</label>
+                    <input type="file" name="bill_image" id="id_bill_image" class="form-control" accept=".jpg,.jpeg,.png" required>
+                    <small class="form-text text-muted">Max file size: 5MB (JPG/PNG).</small>
+                </div>
+                <div class="mb-3">
+                    <label for="id_warranty_image" class="form-label">Warranty Card Image (Optional)</label>
+                    <input type="file" name="warranty_image" id="id_warranty_image" class="form-control" accept=".jpg,.jpeg,.png">
+                    <small class="form-text text-muted">Max file size: 5MB (JPG/PNG).</small>
+                </div>
+                <div class="mb-3">
+                    <label for="id_shop_name" class="form-label">Shop Name</label>
+                    <input type="text" name="shop_name" id="id_shop_name" class="form-control" value="">
+                </div>
+                <div class="mb-3">
+                    <label for="id_contact_number" class="form-label">Contact Number</label>
+                    <input type="text" name="contact_number" id="id_contact_number" class="form-control" value="">
+                </div>
+                <div class="mb-3">
+                    <label for="id_bill_date" class="form-label">Bill Date</label>
+                    <input type="date" name="bill_date" id="id_bill_date" class="form-control" value="">
+                </div>
+                <div class="mb-3">
+                    <label for="id_total_amount" class="form-label">Total Amount</label>
+                    <input type="number" step="0.01" name="total_amount" id="id_total_amount" class="form-control" value="">
+                </div>
+                <div class="mb-3">
+                    <label for="id_items" class="form-label">Items</label>
+                    <textarea name="items" id="id_items" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="id_warranty_period_years" class="form-label">Warranty Period (Years)</label>
+                    <input type="number" name="warranty_period_years" id="id_warranty_period_years" class="form-control" value="">
+                </div>
+                <button type="submit" class="btn btn-primary">Save Bill</button>
+                <button type="button" id="accept-suggestions" class="btn btn-secondary mt-2" style="display: none;">Accept Suggestions</button>
+            </form>
+            <div id="suggestions" style="display: none; margin-top: 10px;">
+                <h4>Suggested Data</h4>
+                <p><strong>Shop Name:</strong> <span id="sug_shop_name"></span></p>
+                <p><strong>Contact Number:</strong> <span id="sug_contact_number"></span></p>
+                <p><strong>Bill Date:</strong> <span id="sug_bill_date"></span></p>
+                <p><strong>Total Amount:</strong> <span id="sug_total_amount"></span></p>
+                <p><strong>Items:</strong> <span id="sug_items"></span></p>
+                <p><strong>Warranty Year:</strong> <span id="sug_warranty_year"></span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const billInput = document.getElementById('id_bill_image');
+        const warrantyInput = document.getElementById('id_warranty_image');
+        const errorMessage = document.getElementById('error-message');
+        const acceptButton = document.getElementById('accept-suggestions');
+        const suggestionsDiv = document.getElementById('suggestions');
+
+        // Mapping of JSON keys to form field IDs and suggestion spans
+        const fieldMapping = {
+            'Shop Name': { fieldId: 'id_shop_name', sugId: 'sug_shop_name' },
+            'Contact Number': { fieldId: 'id_contact_number', sugId: 'sug_contact_number' },
+            'Bill Date': { fieldId: 'id_bill_date', sugId: 'sug_bill_date' },
+            'Total Amount': { fieldId: 'id_total_amount', sugId: 'sug_total_amount' },
+            'Items': { fieldId: 'id_items', sugId: 'sug_items' },
+            'Warranty Year': { fieldId: 'id_warranty_period_years', sugId: 'sug_warranty_year' }
+        };
+
+        function extractImages() {
+            const maxSize = 5 * 1024 * 1024;
+            if (billInput.files.length > 0 && billInput.files[0].size > maxSize) {
+                errorMessage.textContent = 'Bill image exceeds 5MB. Please upload a smaller file.';
+                errorMessage.style.display = 'block';
+                return;
+            }
+            if (warrantyInput.files.length > 0 && warrantyInput.files[0].size > maxSize) {
+                errorMessage.textContent = 'Warranty image exceeds 5MB. Please upload a smaller file.';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            const formData = new FormData();
+            if (billInput.files.length > 0) {
+                formData.append('bill_image', billInput.files[0]);
+            }
+            if (warrantyInput.files.length > 0) {
+                formData.append('warranty_image', warrantyInput.files[0]);
+            }
+
+            if (formData.has('bill_image')) {
+                document.getElementById('loading').style.display = 'block';
+                errorMessage.style.display = 'none';
+                fetch('{% url 'ajax_extract_image' %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => {
+                    document.getElementById('loading').style.display = 'none';
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Extracted data:', data); // Debug log
+                    if (data.error) {
+                        errorMessage.textContent = data.error;
+                        errorMessage.style.display = 'block';
+                        suggestionsDiv.style.display = 'none';
+                        acceptButton.style.display = 'none';
+                        return;
+                    }
+
+                    // Display suggestions
+                    suggestionsDiv.style.display = 'block';
+                    acceptButton.style.display = 'block';
+                    for (const [jsonKey, { fieldId, sugId }] of Object.entries(fieldMapping)) {
+                        const suggestion = document.getElementById(sugId);
+                        const value = data.structured_data[jsonKey] !== undefined ? data.structured_data[jsonKey].toString() : '';
+                        suggestion.textContent = value || 'Not extracted';
+                    }
+
+                    // Store for potential edit page
+                    sessionStorage.setItem('extracted_data', JSON.stringify(data.structured_data));
+                })
+                .catch(error => {
+                    console.error('Extraction error:', error);
+                    document.getElementById('loading').style.display = 'none';
+                    errorMessage.textContent = 'Error extracting details. Please try again.';
+                    errorMessage.style.display = 'block';
+                    suggestionsDiv.style.display = 'none';
+                    acceptButton.style.display = 'none';
+                });
+            }
+        }
+
+        // Accept suggestions button handler
+        acceptButton.addEventListener('click', () => {
+            const extractedData = JSON.parse(sessionStorage.getItem('extracted_data') || '{}');
+            for (const [jsonKey, { fieldId }] of Object.entries(fieldMapping)) {
+                const field = document.getElementById(fieldId);
+                if (field && extractedData[jsonKey] !== undefined) {
+                    field.value = extractedData[jsonKey].toString();
+                }
+            }
+            suggestionsDiv.style.display = 'none';
+            acceptButton.style.display = 'none';
+        });
+
+        if (billInput && warrantyInput) {
+            billInput.addEventListener('change', extractImages);
+            warrantyInput.addEventListener('change', extractImages);
+        } else {
+            console.error('Input elements not found');
+            errorMessage.textContent = 'Form inputs not found. Please refresh the page.';
+            errorMessage.style.display = 'block';
+        }
+    });
+</script>
+<div id="loading" class="position-fixed top-50 start-50 translate-middle p-3 bg-light border rounded" style="display: none; z-index: 1000;">
+    Processing...
+</div>
+{% endblock %}

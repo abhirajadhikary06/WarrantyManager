@@ -1,0 +1,98 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block content %}
+<h1>Edit Bill</h1>
+<div class="container">
+    <div class="row">
+        <!-- Full-width Form -->
+        <div class="col-md-12">
+            <h3>Edit Bill Details</h3>
+            <div id="error-message" class="alert alert-danger" style="display: none;"></div>
+            <form method="POST" enctype="multipart/form-data" id="edit-form">
+                {% csrf_token %}
+                <input type="hidden" name="bill_id" value="{{ bill.id }}">
+                <div class="mb-3">
+                    <label for="id_bill_image" class="form-label">Bill Image (Optional - Upload to Replace)</label>
+                    <input type="file" name="bill_image" id="id_bill_image" class="form-control" accept=".jpg,.jpeg,.png">
+                    <small class="form-text text-muted">Max file size: 5MB (JPG/PNG). Leave empty to keep current image.</small>
+                </div>
+                <div class="mb-3">
+                    <label for="id_warranty_image" class="form-label">Warranty Card Image (Optional - Upload to Replace)</label>
+                    <input type="file" name="warranty_image" id="id_warranty_image" class="form-control" accept=".jpg,.jpeg,.png">
+                    <small class="form-text text-muted">Max file size: 5MB (JPG/PNG). Leave empty to keep current image.</small>
+                </div>
+                <div class="mb-3">
+                    <label for="id_shop_name" class="form-label">Shop Name</label>
+                    <input type="text" name="shop_name" id="id_shop_name" class="form-control" value="" placeholder="">
+                </div>
+                <div class="mb-3">
+                    <label for="id_contact_number" class="form-label">Contact Number</label>
+                    <input type="text" name="contact_number" id="id_contact_number" class="form-control" value="" placeholder="">
+                </div>
+                <div class="mb-3">
+                    <label for="id_bill_date" class="form-label">Bill Date</label>
+                    <input type="date" name="bill_date" id="id_bill_date" class="form-control" value="" placeholder="YYYY-MM-DD">
+                </div>
+                <div class="mb-3">
+                    <label for="id_total_amount" class="form-label">Total Amount</label>
+                    <input type="number" step="0.01" name="total_amount" id="id_total_amount" class="form-control" value="" placeholder="0.0">
+                </div>
+                <div class="mb-3">
+                    <label for="id_items" class="form-label">Items</label>
+                    <textarea name="items" id="id_items" class="form-control" rows="3" value="" placeholder=""></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="id_warranty_period_years" class="form-label">Warranty Period (Years)</label>
+                    <input type="number" name="warranty_period_years" id="id_warranty_period_years" class="form-control" value="" placeholder="0">
+                </div>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const errorMessage = document.getElementById('error-message');
+
+        // Mapping of field IDs to their data sources
+        const fieldMapping = {
+            'id_shop_name': 'shop_name',
+            'id_contact_number': 'contact_number',
+            'id_bill_date': 'bill_date',
+            'id_total_amount': 'total_amount',
+            'id_items': 'items',
+            'id_warranty_period_years': 'warranty_period_years'
+        };
+
+        // Set placeholders with current data
+        function setPlaceholders() {
+            {% if bill %}
+                {% with warranty=bill.warrantycard %}
+                    Object.entries(fieldMapping).forEach(([fieldId, fieldName]) => {
+                        const field = document.getElementById(fieldId);
+                        let value = '';
+                        if (fieldName === 'shop_name') value = "{{ bill.shop_name|escapejs }}";
+                        else if (fieldName === 'contact_number') value = "{{ bill.contact_number|escapejs }}";
+                        else if (fieldName === 'bill_date') value = "{{ bill.bill_date|date:'Y-m-d'|escapejs }}";
+                        else if (fieldName === 'total_amount') value = "{{ bill.total_amount|floatformat:2|escapejs }}";
+                        else if (fieldName === 'items') value = "{{ bill.items|escapejs }}";
+                        else if (fieldName === 'warranty_period_years' and warranty) value = "{{ warranty.warranty_period_years|default:'0'|escapejs }}";
+                        field.value = ''; // Ensure field starts empty
+                        field.placeholder = value || (fieldId.includes('total_amount') ? '0.0' : fieldId.includes('warranty_period_years') ? '0' : fieldId.includes('bill_date') ? 'YYYY-MM-DD' : '');
+                    });
+                {% endwith %}
+            {% else %}
+                errorMessage.textContent = 'Bill data not found. Please try again.';
+                errorMessage.style.display = 'block';
+            {% endif %}
+        }
+
+        // Initial call to set placeholders
+        setPlaceholders();
+    });
+</script>
+<div id="loading" class="position-fixed top-50 start-50 translate-middle p-3 bg-light border rounded" style="display: none; z-index: 1000;">
+    Processing...
+</div>
+{% endblock %}
