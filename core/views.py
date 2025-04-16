@@ -12,7 +12,10 @@ import os
 import tempfile
 from datetime import datetime, timedelta
 from django.utils import timezone
+import logging
 
+# Set up logging
+logger = logging.getLogger(__name__)
 
 @login_required
 def dashboard(request):
@@ -50,8 +53,9 @@ def ajax_search(request):
             'bill_date': bill.bill_date.strftime('%Y-%m-%d'),
             'total_amount': float(bill.total_amount),
             'items': bill.items,
+            'contact_number': bill.contact_number,  # Added for search if needed
             'warranty_period_years': bill.warrantycard.warranty_period_years if hasattr(bill, 'warrantycard') else 0,
-            'warranty_end_date': bill.warrantycard.warranty_end_date.strftime('%Y-%m-%d') if hasattr(bill, 'warrantycard') and bill.warrantycard.warranty_end_date else '',
+            'warranty_end_date': bill.warrantycard.warranty_end_date.strftime('%Y-%m-d') if hasattr(bill, 'warrantycard') and bill.warrantycard.warranty_end_date else '',
             'has_warranty': hasattr(bill, 'warrantycard')
         }
         for bill in bills
@@ -178,9 +182,21 @@ def edit_bill(request, bill_id):
 def delete_bill(request, bill_id):
     bill = get_object_or_404(Bill, id=bill_id, user=request.user)
     if request.method == 'POST':
-        bill.delete()
-        messages.success(request, 'Bill deleted successfully!')
-    return redirect('dashboard')
+        try:
+            bill.delete()
+            logger.info(f"Bill {bill_id} deleted successfully for user {request.user.username}")
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                messages.success(request, 'Bill deleted successfully!')
+                return JsonResponse({'status': 'success', 'message': 'Bill deleted successfully!'})
+            messages.success(request, 'Bill deleted successfully!')
+            return redirect('dashboard')
+        except Exception as e:
+            logger.error(f"Error deleting bill {bill_id}: {str(e)}")
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'status': 'error', 'message': f'Failed to delete bill: {str(e)}'}, status=500)
+            messages.error(request, f'Failed to delete bill: {str(e)}')
+            return redirect('dashboard')
+    return redirect('dashboard')  # Handle GET requests safely
 
 def public_warranties(request):
     shared_warranties = SharedWarranty.objects.all().order_by('-shared_at')

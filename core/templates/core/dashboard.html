@@ -26,11 +26,12 @@
     <!-- Bills List -->
     <h3>Your Bills</h3>
     {% if bills %}
-        <div class="list-group">
+        <div class="list-group" id="bills-list">
             {% for bill in bills %}
                 <div class="list-group-item" id="bill-{{ bill.id }}">
                     <h4>{{ bill.shop_name }} - {{ bill.bill_date|date:'Y-m-d' }}</h4>
                     <p>Total Amount: {{ bill.total_amount }}</p>
+                    <p>Contact: {{ bill.contact_number|default:'N/A' }}</p> <!-- Added contact number -->
                     <p>Items: {{ bill.items|truncatechars:100 }}</p>
                     <div class="row">
                         <!-- Bill Image -->
@@ -58,13 +59,9 @@
         <p>No bills uploaded yet.</p>
     {% endif %}
     <!-- Messages Display -->
-    {% if messages %}
-        <div id="message-container" class="mt-3">
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-            {% endfor %}
-        </div>
-    {% endif %}
+    <div id="message-container" class="mt-3"></div>
+    <!-- Hidden CSRF Token -->
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
 </div>
 
 <script>
@@ -72,6 +69,7 @@
         const searchBar = document.getElementById('search-bar');
         const suggestionsList = document.getElementById('suggestions-list');
         const messageContainer = document.getElementById('message-container');
+        const billsList = document.getElementById('bills-list');
 
         // Search Functionality
         searchBar.addEventListener('input', () => {
@@ -129,16 +127,24 @@
                 fetch(`{% url 'delete_bill' 0 %}`.replace('0', billId), {
                     method: 'POST',
                     headers: {
-                        'X-CRequested-With': 'XMLHttpRequest',
+                        'X-Requested-With': 'XMLHttpRequest',
                         'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
                     }
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.status === 'success') {
                         const billElement = document.getElementById(`bill-${billId}`);
                         if (billElement) {
                             billElement.remove(); // Remove from DOM
+                            console.log(`Removed bill ${billId} from DOM`);
+                        } else {
+                            console.warn(`Bill element ${billId} not found in DOM`);
                         }
                         // Display success message
                         if (messageContainer) {
@@ -147,12 +153,21 @@
                         }
                         // Update bills count or hide list if empty
                         const billItems = document.querySelectorAll('.list-group-item');
-                        if (billItems.length === 0) {
-                            document.querySelector('.list-group').innerHTML = '<p>No bills uploaded yet.</p>';
+                        if (billItems.length === 0 && billsList) {
+                            billsList.innerHTML = '<p>No bills uploaded yet.</p>';
+                            console.log('Updated to no bills message');
                         }
+                    } else {
+                        console.error('Delete failed:', data.message);
+                        messageContainer.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
+                        setTimeout(() => messageContainer.innerHTML = '', 3000);
                     }
                 })
-                .catch(error => console.error('Delete error:', error));
+                .catch(error => {
+                    console.error('Delete error:', error);
+                    messageContainer.innerHTML = `<div class="alert alert-danger">Failed to delete bill: ${error.message}</div>`;
+                    setTimeout(() => messageContainer.innerHTML = '', 3000);
+                });
             });
         });
     });
