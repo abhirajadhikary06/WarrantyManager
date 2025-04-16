@@ -137,6 +137,11 @@
 
                     // Store for potential edit page
                     sessionStorage.setItem('extracted_data', JSON.stringify(data.structured_data));
+
+                    // Automatically click Accept Suggestions after 0.1 seconds
+                    setTimeout(() => {
+                        acceptButton.click();
+                    }, 100); // 0.1 seconds
                 })
                 .catch(error => {
                     console.error('Extraction error:', error);
