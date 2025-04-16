@@ -1,9 +1,504 @@
-{% extends 'core/base.html' %}
-{% block content %}
-<h1>Login</h1>
-<form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">Login</button>
-</form>
-{% endblock %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BillVault - Streamline Your Warranties and Bills Management</title>
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav>
+                <div class="logo">
+                    <div class="logo-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 6.5C3 5.11929 4.11929 4 5.5 4H18.5C19.8807 4 21 5.11929 21 6.5V17.5C21 18.8807 19.8807 20 18.5 20H5.5C4.11929 20 3 18.8807 3 17.5V6.5Z" stroke="#7E69AB" stroke-width="2"/>
+                            <path d="M3 8H21" stroke="#7E69AB" stroke-width="2"/>
+                            <path d="M7 12H17" stroke="#7E69AB" stroke-width="2"/>
+                            <path d="M7 16H13" stroke="#7E69AB" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <h1>BillVault</h1>
+                </div>
+                <div class="nav-links">
+                    <a href="#features">Features</a>
+                    <a href="#testimonials">Testimonials</a>
+                    <a href="#pricing">Pricing</a>
+                </div>
+                <div class="auth-buttons">
+                    <div class="dropdown-container">
+                        <a href="#" class="btn-login" id="loginButton">Log in</a>
+                        <div class="dropdown-menu" id="loginDropdown">
+                            <!-- Login Form -->
+                            <form id="login-form" method="POST" class="auth-form">
+                                {% csrf_token %}
+                                {{ login_form.as_p }}
+                                <button type="submit" name="login" class="btn btn-primary w-100">Login</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="dropdown-container">
+                        <a href="#" class="btn-signup" id="signupButton">Sign up</a>
+                        <div class="dropdown-menu" id="signupDropdown">
+                            <!-- Register Form -->
+                            <form id="register-form" method="POST" class="auth-form">
+                                {% csrf_token %}
+                                {% for field in register_form %}
+                                    <div class="form-group">
+                                        {{ field.label_tag }}
+                                        {{ field }}
+                                    </div>
+                                {% endfor %}
+                                <button type="submit" name="register" class="btn btn-primary w-100">Register</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>Streamline Your <span class="purple">Warranties</span> and <span class="purple">Bills</span> Management</h1>
+                <p>BillVault helps you securely store, organize, and monitor your bills and warranties in one place.</p>
+                <div class="hero-buttons">
+                    <a href="#" class="btn-primary">Start for free</a>
+                    <a href="#" class="btn-secondary">See how it works</a>
+                </div>
+            </div>
+            <div class="hero-image">
+                <img src="{% static 'bill_illustration.png' %}" alt="BillVault Dashboard">
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2>Key Features</h2>
+                <p>Everything you need to manage your bills and warranties in one place.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 16.5L12 7.5L16.5 12L21 7.5M3 16.5V7.5M3 16.5H21M21 7.5V16.5" stroke="#7E69AB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h3>Upload & Extract</h3>
+                    <p>Easily upload bill and warranty images, with automatic data extraction for quick setup.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M15.5 15.5L19 19M5 11C5 14.3137 7.68629 17 11 17C14.3137 17 17 14.3137 17 11C17 7.68629 14.3137 5 11 5C7.68629 5 5 7.68629 5 11Z" stroke="#7E69AB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h3>Smart Search</h3>
+                    <p>Find bills and warranties instantly by shop name, items, date, or contact details.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M15 17H9M12 13V9M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21Z" stroke="#7E69AB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h3>Notifications</h3>
+                    <p>Get timely alerts for warranties expiring within seven days.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M7 11C8.10457 11 9 10.1046 9 9C9 7.89543 8.10457 7 7 7C5.89543 7 5 7.89543 5 9C5 10.1046 5.89543 11 7 11Z" stroke="#7E69AB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M17 7C18.1046 7 19 6.10457 19 5C19 3.89543 18.1046 3 17 3C15.8954 3 15 3.89543 15 5C15 6.10457 15.8954 7 17 7Z" stroke="#7E69AB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M17 21C18.1046 21 19 20.1046 19 19C19 17.8954 18.1046 17 17 17C15.8954 17 15 17.8954 15 19C15 20.1046 15.8954 21 17 21Z" stroke="#7E69AB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M9 9L15 5M9 9L15 19" stroke="#7E69AB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h3>Secure Sharing</h3>
+                    <p>Share warranty details securely with others when needed.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="testimonials" class="testimonials">
+        <div class="container">
+            <div class="section-header">
+                <h2>What Our Users Say</h2>
+                <p>Discover how BillVault is helping people stay organized and stress-free.</p>
+            </div>
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <div class="quote-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M10 11L8 17H6L8 11H6V8H10V11ZM18 11L16 17H14L16 11H14V8H18V11Z" fill="#C4B5FD"/>
+                        </svg>
+                    </div>
+                    <p class="testimonial-text">BillVault has completely transformed how I manage my business expenses and warranties. The automatic notifications have saved me from missing important warranty renewals multiple times.</p>
+                    <div class="testimonial-author">
+                        <div class="avatar">SJ</div>
+                        <div class="author-info">
+                            <h4>Sarah Johnson</h4>
+                            <p>Small Business Owner</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="quote-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M10 11L8 17H6L8 11H6V8H10V11ZM18 11L16 17H14L16 11H14V8H18V11Z" fill="#C4B5FD"/>
+                        </svg>
+                    </div>
+                    <p class="testimonial-text">Our family has so many appliances and electronics with different warranty periods. BillVault helps us keep track of everything in one place. The search feature is incredibly useful.</p>
+                    <div class="testimonial-author">
+                        <div class="avatar">DC</div>
+                        <div class="author-info">
+                            <h4>David Chen</h4>
+                            <p>Household Manager</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="quote-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M10 11L8 17H6L8 11H6V8H10V11ZM18 11L16 17H14L16 11H14V8H18V11Z" fill="#C4B5FD"/>
+                        </svg>
+                    </div>
+                    <p class="testimonial-text">As someone who invests in expensive camera equipment, keeping track of warranties is crucial. BillVault makes it simple and stress-free. The interface is intuitive and easy to use.</p>
+                    <div class="testimonial-author">
+                        <div class="avatar">EW</div>
+                        <div class="author-info">
+                            <h4>Emma Williams</h4>
+                            <p>Freelance Photographer</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="pricing" class="pricing">
+        <div class="container">
+            <div class="section-header">
+                <h2>Simple, Transparent Pricing</h2>
+                <p>Choose the plan that works best for you. All plans come with a 30-day free trial.</p>
+            </div>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h3>Free</h3>
+                        <div class="price">
+                            <span class="amount">₹0</span>
+                        </div>
+                        <p>Perfect for individuals starting out</p>
+                    </div>
+                    <div class="pricing-features">
+                        <ul>
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5 12L10 17L19 8" stroke="#7E69AB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Store up to 50 bills & warranties
+                            </li>
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5 12L10 17L19 8" stroke="#7E69AB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Basic search functionality
+                            </li>
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5 12L10 17L19 8" stroke="#7E69AB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                7-day expiry notifications
+                            </li>
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5 12L10 17L19 8" stroke="#7E69AB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Mobile app access
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="pricing-footer">
+                        <a href="#" class="btn-outline">Get Started</a>
+                    </div>
+                </div>
+                <div class="pricing-card popular">
+                    <div class="popular-tag">MOST POPULAR</div>
+                    <div class="pricing-header">
+                        <h3>Premium</h3>
+                        <div class="price">
+                            <span class="amount">₹99.99</span>
+                            <span class="period">per month</span>
+                        </div>
+                        <p>Ideal for families and power users</p>
+                    </div>
+                    <div class="pricing-features">
+                        <ul>
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5 12L10 17L19 8" stroke="#7E69AB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Unlimited bills & warranties storage
+                            </li>
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5 12L10 17L19 8" stroke="#7E69AB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Advanced search & filtering
+                            </li>
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5 12L10 17L19 8" stroke="#7E69AB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Custom notification periods
+                            </li>
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5 12L10 17L19 8" stroke="#7E69AB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Document sharing with family
+                            </li>
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5 12L10 17L19 8" stroke="#7E69AB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Priority customer support
+                            </li>
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5 12L10 17L19 8" stroke="#7E69AB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Data export options
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="pricing-footer">
+                        <a href="#" class="btn-primary">Start Free Trial</a>
+                    </div>
+                </div>
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h3>Business</h3>
+                        <div class="price">
+                            <span class="amount">₹499.99</span>
+                            <span class="period">per month</span>
+                        </div>
+                        <p>For small businesses and teams</p>
+                    </div>
+                    <div class="pricing-features">
+                        <ul>
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5 12L10 17L19 8" stroke="#7E69AB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Everything in Premium
+                            </li>
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5 12L10 17L19 8" stroke="#7E69AB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Multi-user access
+                            </li>
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5 12L10 17L19 8" stroke="#7E69AB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Team management dashboard
+                            </li>
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5 12L10 17L19 8" stroke="#7E69AB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Advanced analytics
+                            </li>
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5 12L10 17L19 8" stroke="#7E69AB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                API access
+                            </li>
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5 12L10 17L19 8" stroke="#7E69AB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Dedicated account manager
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="pricing-footer">
+                        <a href="#" class="btn-outline">Contact Sales</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta">
+        <div class="container">
+            <h2>Ready to simplify your bill and warranty management?</h2>
+            <p>Join thousands of users who are saving time and avoiding missed warranties with BillVault.</p>
+            <a href="#" class="btn-white">Get Started for Free</a>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-top">
+                <div class="footer-logo">
+                    <div class="logo">
+                        <div class="logo-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 6.5C3 5.11929 4.11929 4 5.5 4H18.5C19.8807 4 21 5.11929 21 6.5V17.5C21 18.8807 19.8807 20 18.5 20H5.5C4.11929 20 3 18.8807 3 17.5V6.5Z" stroke="#7E69AB" stroke-width="2"/>
+                                <path d="M3 8H21" stroke="#7E69AB" stroke-width="2"/>
+                                <path d="M7 12H17" stroke="#7E69AB" stroke-width="2"/>
+                                <path d="M7 16H13" stroke="#7E69AB" stroke-width="2"/>
+                            </svg>
+                        </div>
+                        <h1>BillVault</h1>
+                    </div>
+                    <p>BillVault helps you securely store, organize, and monitor your bills and warranties in one place, saving you time and preventing costly oversights.</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h3>Product</h3>
+                        <ul>
+                            <li><a href="#features">Features</a></li>
+                            <li><a href="#pricing">Pricing</a></li>
+                            <li><a href="#">Integrations</a></li>
+                            <li><a href="#">FAQ</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h3>Company</h3>
+                        <ul>
+                            <li><a href="#">About</a></li>
+                            <li><a href="#">Blog</a></li>
+                            <li><a href="#">Careers</a></li>
+                            <li><a href="#">Contact</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2025 BillVault. All rights reserved.</p>
+                <div class="footer-legal">
+                    <a href="#">Terms</a>
+                    <a href="#">Privacy</a>
+                    <a href="#">Cookies</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginButton = document.getElementById('loginButton');
+            const signupButton = document.getElementById('signupButton');
+            const loginDropdown = document.getElementById('loginDropdown');
+            const signupDropdown = document.getElementById('signupDropdown');
+            const overlay = document.getElementById('overlay');
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+    
+            // Toggle login dropdown
+            loginButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                loginDropdown.classList.toggle('active');
+                if (loginDropdown.classList.contains('active')) {
+                    signupDropdown.classList.remove('active');
+                    overlay.classList.add('active');
+                    loginForm.style.display = 'block';
+                } else {
+                    overlay.classList.remove('active');
+                    loginForm.style.display = 'none';
+                }
+            });
+    
+            // Toggle signup dropdown
+            signupButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                signupDropdown.classList.toggle('active');
+                if (signupDropdown.classList.contains('active')) {
+                    loginDropdown.classList.remove('active');
+                    overlay.classList.add('active');
+                    registerForm.style.display = 'block';
+                } else {
+                    overlay.classList.remove('active');
+                    registerForm.style.display = 'none';
+                }
+            });
+    
+            // Close dropdowns when clicking outside
+            overlay.addEventListener('click', function() {
+                loginDropdown.classList.remove('active');
+                signupDropdown.classList.remove('active');
+                overlay.classList.remove('active');
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'none';
+            });
+    
+            // Handle login form submission
+            document.getElementById('login-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest', // Indicate AJAX request
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = '{% url "dashboard" %}';
+                    } else {
+                        console.log('Login failed:', data.message);
+                        // Optionally display errors in the form
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+    
+                loginDropdown.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+    
+            // Handle register form submission
+            document.getElementById('register-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest', // Indicate AJAX request
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = '{% url "dashboard" %}';
+                    } else {
+                        console.log('Registration failed:', data.message);
+                        // Optionally display errors in the form
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+    
+                signupDropdown.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+        });
+    </script>
+</body>
+</html>

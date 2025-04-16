@@ -220,31 +220,43 @@ def share_warranty(request, warranty_id):
         return redirect('dashboard')
     return render(request, 'core/share_confirm.html', {'warranty': warranty})
 
-def register(request):
-    if request.method == 'POST':
-        form = UserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            auth_login(request, user)
-            messages.success(request, 'Registration successful!')
-            return redirect('dashboard')
-    else:
-        form = UserCreationForm()
-    return render(request, 'core/register.html', {'form': form})
-
 def login_view(request):
+    login_form = AuthenticationForm()
+    register_form = UserCreationForm()
+
     if request.method == 'POST':
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            user = form.get_user()
-            auth_login(request, user)
-            messages.success(request, 'Logged in successfully!')
-            return redirect('dashboard')
-        else:
-            messages.error(request, 'Invalid username or password.')
-    else:
-        form = AuthenticationForm()
-    return render(request, 'core/login.html', {'form': form})
+        if 'login' in request.POST:
+            login_form = AuthenticationForm(request, data=request.POST)
+            if login_form.is_valid():
+                user = login_form.get_user()
+                auth_login(request, user)
+                messages.success(request, 'Logged in successfully!')
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': True})
+                return redirect('dashboard')
+            else:
+                messages.error(request, 'Invalid username or password.')
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'message': 'Invalid username or password'})
+        elif 'register' in request.POST:
+            register_form = UserCreationForm(request.POST)
+            if register_form.is_valid():
+                user = register_form.save()
+                auth_login(request, user)
+                messages.success(request, 'Registration successful!')
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': True})
+                return redirect('dashboard')
+            else:
+                messages.error(request, 'Please correct the form errors.')
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'message': 'Please correct the form errors'})
+
+    context = {
+        'login_form': login_form,
+        'register_form': register_form,
+    }
+    return render(request, 'core/login.html', context)
 
 @login_required
 def logout(request):

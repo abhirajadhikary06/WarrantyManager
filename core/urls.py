@@ -1,5 +1,7 @@
 from django.urls import path
 from . import views
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('', views.dashboard, name='dashboard'),
@@ -11,7 +13,9 @@ urlpatterns = [
     path('ajax/extract-image/', views.ajax_extract_image, name='ajax_extract_image'),
     path('public-warranties/', views.public_warranties, name='public_warranties'),
     path('share/<int:warranty_id>/', views.share_warranty, name='share_warranty'),
-    path('register/', views.register, name='register'),
     path('logout/', views.logout, name='logout'),
     path('accounts/login/', views.login_view, name='login'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
