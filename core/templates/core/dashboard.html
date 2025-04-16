@@ -3,6 +3,12 @@
 {% block content %}
 <h1>Dashboard</h1>
 <div class="container">
+    <!-- Search Bar -->
+    <div class="mb-4">
+        <input type="text" id="search-bar" class="form-control" placeholder="Search by Item, Shop Name, or Bill Date..." autocomplete="off">
+        <div id="suggestions-list" class="list-group mt-2" style="position: absolute; z-index: 1000; width: 100%; display: none;"></div>
+    </div>
+
     <!-- Notifications -->
     {% if notifications %}
         <h3>Notifications</h3>
@@ -22,7 +28,7 @@
     {% if bills %}
         <div class="list-group">
             {% for bill in bills %}
-                <div class="list-group-item">
+                <div class="list-group-item" id="bill-{{ bill.id }}">
                     <h4>{{ bill.shop_name }} - {{ bill.bill_date|date:'Y-m-d' }}</h4>
                     <p>Total Amount: {{ bill.total_amount }}</p>
                     <p>Items: {{ bill.items|truncatechars:100 }}</p>
@@ -41,7 +47,7 @@
                         {% endif %}
                     </div>
                     <a href="{% url 'edit_bill' bill.id %}" class="btn btn-info">Edit</a>
-                    <a href="{% url 'delete_bill' bill.id %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this bill?');">Delete</a>
+                    <a href="javascript:void(0);" class="btn btn-danger delete-btn" data-bill-id="{{ bill.id }}" onclick="return confirm('Are you sure you want to delete this bill?');">Delete</a>
                     {% if bill.warrantycard %}
                         <a href="{% url 'share_warranty' bill.warrantycard.id %}" class="btn btn-success">Share</a>
                     {% endif %}
@@ -51,5 +57,111 @@
     {% else %}
         <p>No bills uploaded yet.</p>
     {% endif %}
+    <!-- Messages Display -->
+    {% if messages %}
+        <div id="message-container" class="mt-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchBar = document.getElementById('search-bar');
+        const suggestionsList = document.getElementById('suggestions-list');
+        const messageContainer = document.getElementById('message-container');
+
+        // Search Functionality
+        searchBar.addEventListener('input', () => {
+            const query = searchBar.value.trim();
+            if (query.length < 1) {
+                suggestionsList.style.display = 'none';
+                return;
+            }
+
+            fetch(`{% url 'ajax_search' %}?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    suggestionsList.innerHTML = '';
+                    suggestionsList.style.display = data.bills.length > 0 ? 'block' : 'none';
+                    data.bills.forEach(bill => {
+                        const item = document.createElement('a');
+                        item.className = 'list-group-item list-group-item-action';
+                        item.href = `javascript:void(0);`;
+                        item.textContent = `${bill.shop_name} - ${bill.bill_date} - ${bill.items.substring(0, 50)}...`;
+                        item.dataset.billId = bill.id;
+                        item.addEventListener('click', () => {
+                            searchBar.value = `${bill.shop_name} - ${bill.bill_date}`;
+                            suggestionsList.style.display = 'none';
+                            scrollToBill(bill.id);
+                        });
+                        suggestionsList.appendChild(item);
+                    });
+                })
+                .catch(error => console.error('Search error:', error));
+        });
+
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!searchBar.contains(e.target) && !suggestionsList.contains(e.target)) {
+                suggestionsList.style.display = 'none';
+            }
+        });
+
+        // Scroll to Bill Function
+        function scrollToBill(billId) {
+            const billElement = document.getElementById(`bill-${billId}`);
+            if (billElement) {
+                billElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                billElement.classList.add('highlight');
+                setTimeout(() => billElement.classList.remove('highlight'), 2000);
+            }
+        }
+
+        // Delete Functionality
+        document.querySelectorAll('.delete-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                if (!confirm('Are you sure you want to delete this bill?')) return;
+
+                const billId = button.getAttribute('data-bill-id');
+                fetch(`{% url 'delete_bill' 0 %}`.replace('0', billId), {
+                    method: 'POST',
+                    headers: {
+                        'X-CRequested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const billElement = document.getElementById(`bill-${billId}`);
+                        if (billElement) {
+                            billElement.remove(); // Remove from DOM
+                        }
+                        // Display success message
+                        if (messageContainer) {
+                            messageContainer.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+                            setTimeout(() => messageContainer.innerHTML = '', 3000); // Hide after 3 seconds
+                        }
+                        // Update bills count or hide list if empty
+                        const billItems = document.querySelectorAll('.list-group-item');
+                        if (billItems.length === 0) {
+                            document.querySelector('.list-group').innerHTML = '<p>No bills uploaded yet.</p>';
+                        }
+                    }
+                })
+                .catch(error => console.error('Delete error:', error));
+            });
+        });
+    });
+</script>
+
+<style>
+    .highlight {
+        background-color: #ffff99;
+        transition: background-color 0.5s;
+    }
+</style>
 {% endblock %}

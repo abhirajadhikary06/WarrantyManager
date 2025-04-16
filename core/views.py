@@ -18,7 +18,7 @@ from django.utils import timezone
 def dashboard(request):
     bills = Bill.objects.filter(user=request.user).order_by('-created_at')
     current_date = timezone.now().date()
-    seven_days_later = current_date + timedelta(days=7)
+    seven_days_later = current_date + timezone.timedelta(days=7)
 
     notifications = Notification.objects.filter(
         user=request.user,
@@ -39,6 +39,7 @@ def ajax_search(request):
     if query:
         bills = bills.filter(
             Q(shop_name__icontains=query) |
+            Q(items__icontains=query) |
             Q(bill_date__icontains=query)
         )
     
@@ -48,6 +49,7 @@ def ajax_search(request):
             'shop_name': bill.shop_name,
             'bill_date': bill.bill_date.strftime('%Y-%m-%d'),
             'total_amount': float(bill.total_amount),
+            'items': bill.items,
             'warranty_period_years': bill.warrantycard.warranty_period_years if hasattr(bill, 'warrantycard') else 0,
             'warranty_end_date': bill.warrantycard.warranty_end_date.strftime('%Y-%m-%d') if hasattr(bill, 'warrantycard') and bill.warrantycard.warranty_end_date else '',
             'has_warranty': hasattr(bill, 'warrantycard')

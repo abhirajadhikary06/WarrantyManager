@@ -8,7 +8,7 @@ class Bill(models.Model):
     shop_name = models.CharField(max_length=255)
     contact_number = models.CharField(max_length=20, blank=True)
     bill_date = models.DateField()
-    total_amount = models.FloatField()
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     items = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
