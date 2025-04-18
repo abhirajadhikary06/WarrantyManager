@@ -3,6 +3,15 @@
 {% block content %}
 <h1>Dashboard</h1>
 <div class="container">
+    <!-- Messages Display -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
     <!-- Search Bar -->
     <div class="mb-4">
         <input type="text" id="search-bar" class="form-control" placeholder="Search by Item, Shop Name, or Bill Date..." autocomplete="off">
@@ -31,8 +40,12 @@
                 <div class="list-group-item" id="bill-{{ bill.id }}">
                     <h4>{{ bill.shop_name }} - {{ bill.bill_date|date:'Y-m-d' }}</h4>
                     <p>Total Amount: {{ bill.total_amount }}</p>
-                    <p>Contact: {{ bill.contact_number|default:'N/A' }}</p> <!-- Added contact number -->
+                    <p>Contact: {{ bill.contact_number|default:'N/A' }}</p>
                     <p>Items: {{ bill.items|truncatechars:100 }}</p>
+                    {% if bill.warrantycard %}
+                        <p>Warranty Period: {{ bill.warrantycard.warranty_period_years }} years</p>
+                        <p>Warranty End Date: {{ bill.warrantycard.warranty_end_date|date:'Y-m-d' }}</p>
+                    {% endif %}
                     <div class="row">
                         <!-- Bill Image -->
                         <div class="col-md-6 mb-3 position-relative">
@@ -58,8 +71,6 @@
     {% else %}
         <p>No bills uploaded yet.</p>
     {% endif %}
-    <!-- Messages Display -->
-    <div id="message-container" class="mt-3"></div>
     <!-- Hidden CSRF Token -->
     <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
 </div>
@@ -147,21 +158,17 @@
                     if (data.status === 'success') {
                         const billElement = document.getElementById(`bill-${billId}`);
                         if (billElement) {
-                            billElement.remove(); // Remove from DOM
-                            console.log(`Removed bill ${billId} from DOM`);
-                        } else {
-                            console.warn(`Bill element ${billId} not found in DOM`);
+                            billElement.remove();
                         }
                         // Display success message
                         if (messageContainer) {
                             messageContainer.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
-                            setTimeout(() => messageContainer.innerHTML = '', 3000); // Hide after 3 seconds
+                            setTimeout(() => messageContainer.innerHTML = '', 3000);
                         }
                         // Update bills count or hide list if empty
                         const billItems = document.querySelectorAll('.list-group-item');
                         if (billItems.length === 0 && billsList) {
                             billsList.innerHTML = '<p>No bills uploaded yet.</p>';
-                            console.log('Updated to no bills message');
                         }
                     } else {
                         console.error('Delete failed:', data.message);

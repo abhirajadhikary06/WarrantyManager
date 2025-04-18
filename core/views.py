@@ -19,7 +19,8 @@ logger = logging.getLogger(__name__)
 
 @login_required
 def dashboard(request):
-    bills = Bill.objects.filter(user=request.user).order_by('-created_at')
+    # Force fresh data by not using any caching
+    bills = Bill.objects.filter(user=request.user).order_by('-created_at').select_related('warrantycard')
     current_date = timezone.now().date()
     seven_days_later = current_date + timezone.timedelta(days=7)
 
@@ -149,34 +150,63 @@ def edit_bill(request, bill_id):
     if request.method == 'POST':
         form = BillUploadForm(request.POST, request.FILES)
         if form.is_valid():
-            bill.bill_image = request.FILES.get('bill_image', bill.bill_image)
-            bill.shop_name = form.cleaned_data['shop_name']
-            bill.contact_number = form.cleaned_data['contact_number']
-            bill.bill_date = form.cleaned_data['bill_date']
-            bill.total_amount = form.cleaned_data['total_amount']
-            bill.items = form.cleaned_data['items']
-            bill.save()
+            try:
+                # Update bill data
+                bill.shop_name = form.cleaned_data['shop_name']
+                bill.contact_number = form.cleaned_data['contact_number']
+                bill.bill_date = form.cleaned_data['bill_date']
+                bill.total_amount = form.cleaned_data['total_amount']
+                bill.items = form.cleaned_data['items']
+                
+                # Handle bill image update
+                if 'bill_image' in request.FILES:
+                    bill.bill_image = request.FILES['bill_image']
+                
+                # Save bill changes
+                bill.save()
 
-            warranty = bill.warrantycard
-            if warranty:
-                warranty.warranty_image = request.FILES.get('warranty_image', warranty.warranty_image)
-                warranty.warranty_period_years = form.cleaned_data.get('warranty_period_years', 0)
-                warranty.save()
-            elif form.cleaned_data.get('warranty_period_years') or request.FILES.get('warranty_image'):
-                warranty = WarrantyCard(
-                    bill=bill,
-                    warranty_image=request.FILES.get('warranty_image'),
-                    warranty_period_years=form.cleaned_data.get('warranty_period_years', 0)
-                )
-                warranty.save()
+                # Update or create warranty data
+                warranty_period_years = form.cleaned_data.get('warranty_period_years', 0)
+                warranty_image = request.FILES.get('warranty_image')
 
-            messages.success(request, 'Bill updated successfully!')
-            return redirect('dashboard')
+                if hasattr(bill, 'warrantycard'):
+                    warranty = bill.warrantycard
+                    if warranty_image:
+                        warranty.warranty_image = warranty_image
+                    warranty.warranty_period_years = warranty_period_years
+                    warranty.save()
+                elif warranty_period_years or warranty_image:
+                    warranty = WarrantyCard(
+                        bill=bill,
+                        warranty_image=warranty_image,
+                        warranty_period_years=warranty_period_years
+                    )
+                    warranty.save()
+
+                messages.success(request, 'Bill updated successfully!')
+                # Force a redirect to dashboard with a cache-busting parameter
+                return redirect('dashboard')
+            except Exception as e:
+                logger.error(f"Error updating bill {bill_id}: {str(e)}")
+                messages.error(request, f'Failed to update bill: {str(e)}')
         else:
-            messages.error(request, 'Please correct the form errors.')
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
     else:
-        form = BillUploadForm()  # Empty form for GET
-    return render(request, 'core/edit.html', {'bill': bill})
+        # Initialize form with existing bill data
+        initial_data = {
+            'shop_name': bill.shop_name,
+            'contact_number': bill.contact_number,
+            'bill_date': bill.bill_date,
+            'total_amount': bill.total_amount,
+            'items': bill.items,
+        }
+        # Add warranty data if exists
+        if hasattr(bill, 'warrantycard'):
+            initial_data['warranty_period_years'] = bill.warrantycard.warranty_period_years
+        form = BillUploadForm(initial=initial_data)
+    return render(request, 'core/edit.html', {'bill': bill, 'form': form})
 
 @login_required
 def delete_bill(request, bill_id):
