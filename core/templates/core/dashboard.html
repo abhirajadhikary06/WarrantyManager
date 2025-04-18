@@ -63,6 +63,12 @@
     <!-- Hidden CSRF Token -->
     <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
 </div>
+<style>
+    .highlight {
+        background-color: #ffff99;
+        transition: background-color 0.5s;
+    }
+</style>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -172,11 +178,4 @@
         });
     });
 </script>
-
-<style>
-    .highlight {
-        background-color: #ffff99;
-        transition: background-color 0.5s;
-    }
-</style>
 {% endblock %}

@@ -50,7 +50,9 @@
         </div>
     </div>
 </div>
-
+<div id="loading" class="position-fixed top-50 start-50 translate-middle p-3 bg-light border rounded" style="display: none; z-index: 1000;">
+    Processing...
+</div>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const errorMessage = document.getElementById('error-message');
@@ -92,7 +94,4 @@
         setPlaceholders();
     });
 </script>
-<div id="loading" class="position-fixed top-50 start-50 translate-middle p-3 bg-light border rounded" style="display: none; z-index: 1000;">
-    Processing...
-</div>
 {% endblock %}
