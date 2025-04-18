@@ -1,4 +1,5 @@
 from pathlib import Path
+# from django.contrib.messages import constants as messages
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -121,3 +122,12 @@ OCR_SPACE_API_KEY = 'K83355447588957'
 GEMINI_API_KEY = 'AIzaSyAJ3uU_eH5sPsRkadJl2Fg1k6nEglQA34o'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# MESSAGE_TAGS = {
+#     messages.DEBUG: 'debug',
+#     messages.INFO: 'info',
+#     messages.SUCCESS: 'success',
+#     messages.WARNING: 'warning',
+#     messages.ERROR: 'danger',
+# }
