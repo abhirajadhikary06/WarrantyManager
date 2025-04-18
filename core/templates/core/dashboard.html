@@ -1,139 +1,553 @@
 {% extends 'core/base.html' %}
 {% load static %}
 {% block content %}
-<h1>Dashboard</h1>
-<div class="container">
-    <!-- Messages Display -->
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-
-    <!-- Search Bar -->
-    <div class="mb-4">
-        <input type="text" id="search-bar" class="form-control" placeholder="Search by Item, Shop Name, or Bill Date..." autocomplete="off">
-        <div id="suggestions-list" class="list-group mt-2" style="position: absolute; z-index: 1000; width: 100%; display: none;"></div>
+<div class="dashboard-container">
+    <h1 class="page-header">All Bills</h1>
+    <div class="notification-bell" id="notification-bell">
+        <i class="fas fa-bell"></i>
+        {% if notifications|length > 0 and has_unread %}
+            <span class="notification-dot"></span>
+        {% endif %}
     </div>
-
-    <!-- Notifications -->
-    {% if notifications %}
-        <h3>Notifications</h3>
-        <ul class="list-group">
-            {% for notification in notifications %}
-                <li class="list-group-item">
+    <div class="notification-dropdown" id="notification-dropdown">
+        <ul class="notification-list">
+            {% for notification in notifications|slice:":5" %}
+                <li class="notification-item {% if not notification.is_read %}unread{% endif %}">
                     Warranty for {{ notification.warranty_card.bill.items|truncatechars:50 }} expires on {{ notification.warranty_card.warranty_end_date|date:'Y-m-d' }}.
                 </li>
             {% empty %}
-                <li class="list-group-item">No upcoming warranty expirations.</li>
+                <li class="notification-item">No upcoming warranty expirations.</li>
             {% endfor %}
         </ul>
-    {% endif %}
+    </div>
 
-    <!-- Bills List -->
-    <h3>Your Bills</h3>
-    {% if bills %}
-        <div class="list-group" id="bills-list">
-            {% for bill in bills %}
-                <div class="list-group-item" id="bill-{{ bill.id }}">
-                    <h4>{{ bill.shop_name }} - {{ bill.bill_date|date:'Y-m-d' }}</h4>
-                    <p>Total Amount: {{ bill.total_amount }}</p>
-                    <p>Contact: {{ bill.contact_number|default:'N/A' }}</p>
-                    <p>Items: {{ bill.items|truncatechars:100 }}</p>
-                    {% if bill.warrantycard %}
-                        <p>Warranty Period: {{ bill.warrantycard.warranty_period_years }} years</p>
-                        <p>Warranty End Date: {{ bill.warrantycard.warranty_end_date|date:'Y-m-d' }}</p>
-                    {% endif %}
-                    <div class="row">
-                        <!-- Bill Image -->
-                        <div class="col-md-6 mb-3 position-relative">
-                            <img src="{{ bill.bill_image.url }}" alt="Bill Image" class="img-fluid" style="max-width: 200px; max-height: 200px; object-fit: cover;">
-                            <a href="{{ bill.bill_image.url }}" download class="btn btn-sm btn-primary position-absolute" style="top: 5px; right: 5px;">Download</a>
-                        </div>
-                        <!-- Warranty Image (if exists) -->
-                        {% if bill.warrantycard and bill.warrantycard.warranty_image %}
-                            <div class="col-md-6 mb-3 position-relative">
-                                <img src="{{ bill.warrantycard.warranty_image.url }}" alt="Warranty Image" class="img-fluid" style="max-width: 200px; max-height: 200px; object-fit: cover;">
-                                <a href="{{ bill.warrantycard.warranty_image.url }}" download class="btn btn-sm btn-primary position-absolute" style="top: 5px; right: 5px;">Download</a>
-                            </div>
-                        {% endif %}
-                    </div>
-                    <a href="{% url 'edit_bill' bill.id %}" class="btn btn-info">Edit</a>
-                    <a href="javascript:void(0);" class="btn btn-danger delete-btn" data-bill-id="{{ bill.id }}" onclick="return confirm('Are you sure you want to delete this bill?');">Delete</a>
-                    {% if bill.warrantycard %}
-                        <a href="{% url 'share_warranty' bill.warrantycard.id %}" class="btn btn-success">Share</a>
-                    {% endif %}
+    <div class="container">
+        <!-- Messages Display -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
                 </div>
             {% endfor %}
+        {% endif %}
+
+        <!-- Search Bar -->
+        <div class="mb-4 position-relative">
+            <input type="text" id="search-bar" class="form-control search-bar" placeholder="Search by Item, Shop Name, or Bill Date..." autocomplete="off">
+            <div id="suggestions-list" class="list-group mt-2" style="position: absolute; z-index: 1000; width: calc(100% - 2rem); display: none;"></div>
         </div>
-    {% else %}
-        <p>No bills uploaded yet.</p>
-    {% endif %}
-    <!-- Hidden CSRF Token -->
-    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
+        <!-- Bills List -->
+        {% if bills %}
+            <div class="bills-list" id="bills-list">
+                {% for bill in bills %}
+                    <div class="list-group-item bill-card" id="bill-{{ bill.id }}">
+                        <h4 class="bill-header">{{ bill.shop_name }} - {{ bill.bill_date|date:'Y-m-d' }}</h4>
+                        <div class="bill-details">
+                            <div class="total-amount">
+                                <span class="label">Total Amount:</span>
+                                <span class="value">${{ bill.total_amount }}</span>
+                            </div>
+                            <div class="contact">
+                                <span class="label">Contact:</span>
+                                <span class="value">{{ bill.contact_number|default:'N/A' }}</span>
+                            </div>
+                            <div class="items">
+                                <span class="items-label">Items:</span>
+                                <span class="items-value">{{ bill.items|truncatechars:100 }}</span>
+                            </div>
+                            {% if bill.warrantycard %}
+                                <div class="warranty-info">
+                                    <div class="warranty-period">
+                                        <span class="warranty-period-label">Warranty Period:</span>
+                                        <span class="warranty-period-value">{{ bill.warrantycard.warranty_period_years }} years</span>
+                                    </div>
+                                    <div class="warranty-end-date">
+                                        <span class="warranty-end-date-label">Warranty End Date:</span>
+                                        <span class="warranty-end-date-value">{{ bill.warrantycard.warranty_end_date|date:'Y-m-d' }}</span>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="bill-images row">
+                            <!-- Bill Image -->
+                            <div class="col-md-6 mb-3 position-relative">
+                                <div class="image-container">
+                                    <img src="{{ bill.bill_image.url }}" alt="Bill Image" class="bill-image">
+                                    <button class="download-btn" onclick="window.location.href='{{ bill.bill_image.url }}';">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Warranty Image (if exists) -->
+                            {% if bill.warrantycard and bill.warrantycard.warranty_image %}
+                                <div class="col-md-6 mb-3 position-relative">
+                                    <div class="image-container">
+                                        <img src="{{ bill.warrantycard.warranty_image.url }}" alt="Warranty Image" class="bill-image">
+                                        <button class="download-btn" onclick="window.location.href='{{ bill.warrantycard.warranty_image.url }}';">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="action-buttons">
+                            <a href="{% url 'edit_bill' bill.id %}" class="btn btn-info">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <a href="javascript:void(0);" class="btn btn-danger delete-btn" data-bill-id="{{ bill.id }}" onclick="return confirm('Are you sure you want to delete this bill?');">
+                                <i class="fas fa-trash"></i> Delete
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>No bills uploaded yet.</p>
+        {% endif %}
+        <!-- Hidden CSRF Token -->
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+    </div>
 </div>
 <style>
-    .highlight {
-        background-color: #ffff99;
-        transition: background-color 0.5s;
+.dashboard-container {
+    position: relative;
+    min-height: 100vh;
+    padding-top: 4rem;
+}
+
+.page-header {
+    color: var(--primary);
+    text-align: center;
+    margin-bottom: 2rem;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.notification-bell {
+    position: fixed;
+    top: 6rem;
+    right: 3rem;
+    font-size: 1.5rem;
+    color: var(--gray-700);
+    cursor: pointer;
+    z-index: 1000;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.notification-bell:hover {
+    color: var(--primary);
+    transform: scale(1.1);
+}
+
+.notification-dot {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    width: 0.5rem;
+    height: 0.5rem;
+    background-color: var(--primary);
+    border-radius: 50%;
+}
+
+.notification-dropdown {
+    position: fixed;
+    top: 4rem;
+    right: 1rem;
+    width: 300px;
+    max-height: 400px;
+    background-color: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: 0.5rem;
+    box-shadow: var(--box-shadow);
+    z-index: 1000;
+    display: none;
+    overflow-y: auto;
+    padding: 0.5rem 0;
+}
+
+.notification-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.notification-item {
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.notification-item.unread {
+    font-weight: 600;
+    background-color: var(--primary-very-light);
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.search-bar {
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--gray-300);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    width: 100%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: border-color 0.3s ease;
+    padding-left: 2.5rem;
+    background: var(--white) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%236b7280" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>') no-repeat 0.75rem center;
+    background-size: 1rem;
+    max-width: 100%;
+}
+
+.search-bar:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 3px var(--secondary-light);
+}
+
+#suggestions-list {
+    border-radius: 0.5rem;
+    box-shadow: var(--box-shadow);
+    border: 1px solid var(--gray-200);
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: var(--white);
+    width: calc(100% - 2rem);
+    position: absolute;
+    top: 100%;
+    left: 0;
+}
+
+#suggestions-list .list-group-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--gray-200);
+    cursor: pointer;
+}
+
+#suggestions-list .list-group-item:last-child {
+    border-bottom: none;
+}
+
+#suggestions-list .list-group-item:hover {
+    background-color: var(--gray-100);
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.section-header .fas {
+    color: var(--primary);
+}
+
+.bills-list {
+    margin-top: 1rem;
+}
+
+.bill-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.bill-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+.bill-header {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+}
+
+.bill-details .total-amount,
+.bill-details .contact {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.bill-details .label {
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.bill-details .value {
+    font-weight: 600;
+}
+
+.bill-details .items {
+    margin-bottom: 1rem;
+}
+
+.bill-details .items-label {
+    color: var(--text-muted);
+    margin-bottom: 0.25rem;
+}
+
+.bill-details .items-value {
+    color: var(--text-primary);
+}
+
+.warranty-info {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.warranty-period,
+.warranty-end-date {
+    flex: 1;
+    background-color: var(--primary-very-light);
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+}
+
+.warranty-period-label,
+.warranty-end-date-label {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin-bottom: 0.25rem;
+}
+
+.warranty-period-value,
+.warranty-end-date-value {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.bill-images {
+    display: flex;
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.image-container {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    border: 1px solid var(--gray-200);
+}
+
+.bill-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.download-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background-color: var(--primary);
+    border-radius: 50%;
+    padding: 0.5rem;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--box-shadow);
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.download-btn:hover {
+    background-color: var(--primary-dark);
+}
+
+.download-btn .fas {
+    color: var(--white);
+    font-size: 0.9rem;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    justify-content: flex-end;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-info {
+    background-color: var(--primary);
+    color: var(--white);
+}
+
+
+.btn-danger {
+    background-color: var(--primary-dark);
+    color: var(--white);
+}
+
+.btn-info:hover{
+    background-color: var(--primary);
+    color: var(--white);
+}
+
+.btn-danger:hover {
+    background-color: var(--primary-dark);
+    color: var(--white);
+}
+
+.alert-success {
+    background-color: var(--primary);
+    color: var(--white);
+}
+
+.alert {
+  padding: 1.2rem 1.5rem;
+  border-radius: 0.75rem;
+  background-color: #fefefe;
+  color: var(--gray-700);
+  border-left: 5px solid var(--primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.alert-danger {
+    background-color: var(--primary-dark);
+    color: var(--white);
+    border-left: var(--primary);
+}
+
+/* Position messages at bottom-right corner */
+.alert-message {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+  animation: slideUp 0.4s ease-out, fadeOut 3s 3s forwards;
+}
+
+.alert-warning {
+    background-color: var(--primary-dark);
+    color: var(--white);
+}
+
+.alert-info {
+    background-color: var(--primary);
+    color: var(--white);
+}
+
+@media (max-width: 768px) {
+    .bill-images {
+        flex-direction: column;
     }
+
+    .col-md-6 {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .btn {
+        width: 100%;
+    }
+
+    .notification-dropdown {
+        width: 90%;
+        right: 5%;
+    }
+}
 </style>
-
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const searchBar = document.getElementById('search-bar');
-        const suggestionsList = document.getElementById('suggestions-list');
-        const messageContainer = document.getElementById('message-container');
-        const billsList = document.getElementById('bills-list');
+document.addEventListener('DOMContentLoaded', () => {
+    const notificationBell = document.getElementById('notification-bell');
+    const notificationDropdown = document.getElementById('notification-dropdown');
+    const searchBar = document.getElementById('search-bar');
+    const suggestionsList = document.getElementById('suggestions-list');
+    const billsList = document.getElementById('bills-list');
 
-        // Search Functionality
-        searchBar.addEventListener('input', () => {
-            const query = searchBar.value.trim();
-            if (query.length < 1) {
-                suggestionsList.style.display = 'none';
-                return;
-            }
-
-            fetch(`{% url 'ajax_search' %}?q=${encodeURIComponent(query)}`)
-                .then(response => response.json())
-                .then(data => {
-                    suggestionsList.innerHTML = '';
-                    suggestionsList.style.display = data.bills.length > 0 ? 'block' : 'none';
-                    data.bills.forEach(bill => {
-                        const item = document.createElement('a');
-                        item.className = 'list-group-item list-group-item-action';
-                        item.href = `javascript:void(0);`;
-                        item.textContent = `${bill.shop_name} - ${bill.bill_date} - ${bill.items.substring(0, 50)}...`;
-                        item.dataset.billId = bill.id;
-                        item.addEventListener('click', () => {
-                            searchBar.value = `${bill.shop_name} - ${bill.bill_date}`;
-                            suggestionsList.style.display = 'none';
-                            scrollToBill(bill.id);
-                        });
-                        suggestionsList.appendChild(item);
-                    });
-                })
-                .catch(error => console.error('Search error:', error));
-        });
-
-        // Hide suggestions when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!searchBar.contains(e.target) && !suggestionsList.contains(e.target)) {
-                suggestionsList.style.display = 'none';
-            }
-        });
-
-        // Scroll to Bill Function
-        function scrollToBill(billId) {
-            const billElement = document.getElementById(`bill-${billId}`);
-            if (billElement) {
-                billElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                billElement.classList.add('highlight');
-                setTimeout(() => billElement.classList.remove('highlight'), 2000);
-            }
+    // Notification Dropdown Toggle and Dot Removal
+    notificationBell.addEventListener('click', () => {
+        const dot = notificationBell.querySelector('.notification-dot');
+        if (notificationDropdown.style.display === 'none') {
+            notificationDropdown.style.display = 'block';
+            if (dot) dot.remove(); // Remove dot when dropdown opens
+        } else {
+            notificationDropdown.style.display = 'none';
         }
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!notificationBell.contains(e.target) && !notificationDropdown.contains(e.target)) {
+            notificationDropdown.style.display = 'none';
+        }
+    });
+
+    // Search Functionality
+    searchBar.addEventListener('input', () => {
+        const query = searchBar.value.toLowerCase();
+        suggestionsList.innerHTML = '';
+        suggestionsList.style.display = 'none';
+
+        if (query.length < 2) return;
+
+        const bills = Array.from(billsList.getElementsByClassName('bill-card'));
+        bills.forEach(bill => {
+            const text = bill.textContent.toLowerCase();
+            if (text.includes(query)) {
+                const suggestion = document.createElement('a');
+                suggestion.className = 'list-group-item list-group-item-action';
+                suggestion.textContent = bill.querySelector('.bill-header').textContent;
+                suggestion.addEventListener('click', () => {
+                    bill.scrollIntoView({ behavior: 'smooth' });
+                    searchBar.value = '';
+                    suggestionsList.style.display = 'none';
+                });
+                suggestionsList.appendChild(suggestion);
+            }
+        });
+
+        if (suggestionsList.children.length > 0) {
+            suggestionsList.style.display = 'block';
+        }
+    });
+
+    // Close suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!searchBar.contains(e.target) && !suggestionsList.contains(e.target)) {
+            suggestionsList.style.display = 'none';
+        }
+    });
 
         // Delete Functionality
         document.querySelectorAll('.delete-btn').forEach(button => {
@@ -182,6 +596,25 @@
                     setTimeout(() => messageContainer.innerHTML = '', 3000);
                 });
             });
+        });
+    });
+
+document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('edit-form');
+        const messages = document.querySelectorAll('.alert');
+
+        // Automatically hide messages after a few seconds
+        messages.forEach(message => {
+            message.classList.add('alert-message'); // Add positioning class
+            setTimeout(() => {
+                message.style.opacity = '0';
+                setTimeout(() => message.remove(), 500); // Remove from DOM after fade out
+            }, 3000); // Show for 3 seconds
+        });
+
+        form.addEventListener('submit', (e) => {
+            // Let the form submit normally
+            // The server will handle the redirect
         });
     });
 </script>

@@ -22,16 +22,18 @@ def dashboard(request):
     # Force fresh data by not using any caching
     bills = Bill.objects.filter(user=request.user).order_by('-created_at').select_related('warrantycard')
     current_date = timezone.now().date()
-    seven_days_later = current_date + timezone.timedelta(days=7)
+    thirty_days_later = current_date + timezone.timedelta(days=30)
 
     notifications = Notification.objects.filter(
         user=request.user,
-        warranty_card__warranty_end_date__range=(current_date, seven_days_later)
+        warranty_card__warranty_end_date__lte=thirty_days_later
     ).select_related('warranty_card__bill')
+    has_unread = notifications.filter(is_read=False).exists()
 
     context = {
         'bills': bills,
         'notifications': notifications,
+        'has_unread': has_unread,
     }
     return render(request, 'core/dashboard.html', context)
 
@@ -144,28 +146,19 @@ def upload_bill(request):
 
     return render(request, 'core/upload.html', {'form': form})
 
+logger = logging.getLogger(__name__)
+
 @login_required
 def edit_bill(request, bill_id):
     bill = get_object_or_404(Bill, id=bill_id, user=request.user)
     if request.method == 'POST':
-        form = BillUploadForm(request.POST, request.FILES)
+        form = BillEditForm(request.POST, request.FILES, instance=bill)
         if form.is_valid():
             try:
-                # Update bill data
-                bill.shop_name = form.cleaned_data['shop_name']
-                bill.contact_number = form.cleaned_data['contact_number']
-                bill.bill_date = form.cleaned_data['bill_date']
-                bill.total_amount = form.cleaned_data['total_amount']
-                bill.items = form.cleaned_data['items']
-                
-                # Handle bill image update
-                if 'bill_image' in request.FILES:
-                    bill.bill_image = request.FILES['bill_image']
-                
-                # Save bill changes
-                bill.save()
+                # Save bill data (bill_image is optional)
+                bill = form.save()
 
-                # Update or create warranty data
+                # Update or create warranty data (warranty_image is optional)
                 warranty_period_years = form.cleaned_data.get('warranty_period_years', 0)
                 warranty_image = request.FILES.get('warranty_image')
 
@@ -184,7 +177,6 @@ def edit_bill(request, bill_id):
                     warranty.save()
 
                 messages.success(request, 'Bill updated successfully!')
-                # Force a redirect to dashboard with a cache-busting parameter
                 return redirect('dashboard')
             except Exception as e:
                 logger.error(f"Error updating bill {bill_id}: {str(e)}")
@@ -202,10 +194,9 @@ def edit_bill(request, bill_id):
             'total_amount': bill.total_amount,
             'items': bill.items,
         }
-        # Add warranty data if exists
         if hasattr(bill, 'warrantycard'):
             initial_data['warranty_period_years'] = bill.warrantycard.warranty_period_years
-        form = BillUploadForm(initial=initial_data)
+        form = BillEditForm(initial=initial_data, instance=bill)
     return render(request, 'core/edit.html', {'bill': bill, 'form': form})
 
 @login_required
@@ -232,23 +223,6 @@ def public_warranties(request):
     shared_warranties = SharedWarranty.objects.all().order_by('-shared_at')
     return render(request, 'core/public_warranties.html', {'shared_warranties': shared_warranties})
 
-@login_required
-def share_warranty(request, warranty_id):
-    warranty = get_object_or_404(WarrantyCard, id=warranty_id, bill__user=request.user)
-    if request.method == 'POST':
-        shared_text = (
-            f"Warranty from {warranty.bill.shop_name}, "
-            f"valid until {warranty.warranty_end_date}. "
-            f"Contact: {warranty.bill.contact_number or 'N/A'}."
-        )
-        SharedWarranty.objects.create(
-            warranty_card=warranty,
-            user=request.user,
-            shared_text=shared_text
-        )
-        messages.success(request, 'Warranty shared successfully!')
-        return redirect('dashboard')
-    return render(request, 'core/share_confirm.html', {'warranty': warranty})
 
 def login_view(request):
     login_form = AuthenticationForm()

@@ -30,11 +30,12 @@
 }
 
 body {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     color: var(--text-primary);
     line-height: 1.5;
     background-color: var(--white);
 }
+
 
 .container {
     max-width: 1200px;
