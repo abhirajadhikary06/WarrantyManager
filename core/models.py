@@ -48,3 +48,15 @@ class SharedWarranty(models.Model):
 
     def __str__(self):
         return f"Shared by {self.user.username} at {self.shared_at}"
+    
+class UserBadge(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='badges')
+    badge_name = models.CharField(max_length=50, blank=True, null=True)  # Allow null for a base record
+    earned_date = models.DateTimeField(auto_now_add=True)
+    lifetime_upload_count = models.PositiveIntegerField(default=0)  # Track total uploads
+
+    class Meta:
+        unique_together = ('user', 'badge_name')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.badge_name or 'Base'}"

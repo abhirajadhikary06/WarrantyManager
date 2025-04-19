@@ -11,7 +11,6 @@ urlpatterns = [
     path('delete/<int:bill_id>/', views.delete_bill, name='delete_bill'),
     path('ajax/search/', views.ajax_search, name='ajax_search'),
     path('ajax/extract-image/', views.ajax_extract_image, name='ajax_extract_image'),
-    path('public-warranties/', views.public_warranties, name='public_warranties'),
     path('logout/', views.logout, name='logout'),
     path('accounts/login/', views.login_view, name='login'),
     path('profile/', views.profile, name='profile'),

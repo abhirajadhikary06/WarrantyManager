@@ -3,8 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.contrib import messages
-from .models import Bill, WarrantyCard, Notification, SharedWarranty
-from .forms import BillUploadForm, BillEditForm, WarrantyEditForm
+from .models import Bill, WarrantyCard, Notification, SharedWarranty, UserBadge
+from .forms import BillUploadForm, BillEditForm
 from .utils import extract_complete_data
 from django.db.models import Q
 from django.http import JsonResponse
@@ -137,6 +137,11 @@ def upload_bill(request):
                         message=f"Warranty for {bill.shop_name} has expired."
                     )
 
+            # Update lifetime upload count in the base UserBadge
+            user_badge, created = UserBadge.objects.get_or_create(user=request.user, defaults={'badge_name': None})
+            user_badge.lifetime_upload_count += 1
+            user_badge.save()
+
             messages.success(request, 'Bill uploaded successfully!')
             return redirect('dashboard')
         else:
@@ -145,6 +150,56 @@ def upload_bill(request):
         form = BillUploadForm()
 
     return render(request, 'core/upload.html', {'form': form})
+
+@login_required
+def profile(request):
+    user = request.user
+    upload_count = Bill.objects.filter(user=user).count()
+    
+    # Get or create user badge record to access lifetime count
+    user_badge, created = UserBadge.objects.get_or_create(user=request.user, defaults={'badge_name': None})
+    lifetime_upload_count = user_badge.lifetime_upload_count
+    
+    # Get existing badges (split if stored as comma-separated string)
+    existing_badges = set(user_badge.badge_name.split(',') if user_badge.badge_name else [])
+    
+    # Define badge thresholds and names
+    badge_thresholds = [
+        (1, "Receipt Rookie"),
+        (10, "Ledger Learner"),
+        (20, "Warranty Watcher"),
+        (30, "Bill Guardian"),
+        (40, "Archive Ace"),
+        (50, "Financial Fortress"),
+        (60, "Record Keeper"),
+        (70, "Warranty Wizard"),
+        (80, "Bill Bastion"),
+        (90, "Ledger Legend"),
+        (100, "Financial Titan"),
+    ]
+    
+    # Award new badges based on lifetime count
+    badges_to_add = []
+    for threshold, badge_name in badge_thresholds:
+        if lifetime_upload_count >= threshold and badge_name not in existing_badges:
+            badges_to_add.append(badge_name)
+    
+    # Update existing badge_name with new badges
+    if badges_to_add:
+        new_badges = existing_badges.union(set(badges_to_add))
+        user_badge.badge_name = ','.join(new_badges) if new_badges else None
+        user_badge.save()
+    
+    # Combine existing and new badges
+    all_badges = list(existing_badges.union(set(badges_to_add)))
+
+    context = {
+        'user': user,
+        'upload_count': upload_count,
+        'badges': all_badges,
+        'join_date': user.date_joined.date(),
+    }
+    return render(request, 'core/profile.html', context)
 
 logger = logging.getLogger(__name__)
 
@@ -219,10 +274,6 @@ def delete_bill(request, bill_id):
             return redirect('dashboard')
     return redirect('dashboard')  # Handle GET requests safely
 
-def public_warranties(request):
-    shared_warranties = SharedWarranty.objects.all().order_by('-shared_at')
-    return render(request, 'core/public_warranties.html', {'shared_warranties': shared_warranties})
-
 
 def login_view(request):
     login_form = AuthenticationForm()
@@ -261,34 +312,6 @@ def login_view(request):
         'register_form': register_form,
     }
     return render(request, 'core/login.html', context)
-
-@login_required
-def profile(request):
-    user = request.user
-    upload_count = Bill.objects.filter(user=user).count()
-    
-    # Determine badges based on upload count
-    badges = []
-    if upload_count >= 1:
-        badges.append("Receipt Rookie")
-    if upload_count >= 10:
-        badges.append("Ledger Learner")
-    if upload_count >= 20:
-        badges.append("Warranty Watcher")
-    if upload_count >= 30:
-        badges.append("Bill Guardian")
-    if upload_count >= 40:
-        badges.append("Archive Ace")
-    if upload_count >= 50:
-        badges.append("Financial Fortress")
-
-    context = {
-        'user': user,
-        'upload_count': upload_count,
-        'badges': badges,
-        'join_date': user.date_joined.date(),  # Join date for profile
-    }
-    return render(request, 'core/profile.html', context)
 
 @login_required
 def logout(request):
