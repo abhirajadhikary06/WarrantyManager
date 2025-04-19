@@ -1,4 +1,8 @@
 from pathlib import Path
+import os
+
+from dotenv import load_dotenv
+load_dotenv()
 # from django.contrib.messages import constants as messages
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -120,8 +124,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 
-OCR_SPACE_API_KEY = 'K83355447588957'
-GEMINI_API_KEY = 'AIzaSyAJ3uU_eH5sPsRkadJl2Fg1k6nEglQA34o'
+OCR_SPACE_API_KEY = os.getenv('OCR_SPACE_API_KEY')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
