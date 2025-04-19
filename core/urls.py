@@ -14,6 +14,7 @@ urlpatterns = [
     path('public-warranties/', views.public_warranties, name='public_warranties'),
     path('logout/', views.logout, name='logout'),
     path('accounts/login/', views.login_view, name='login'),
+    path('profile/', views.profile, name='profile'),
 ]
 
 if settings.DEBUG:

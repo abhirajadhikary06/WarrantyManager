@@ -263,6 +263,34 @@ def login_view(request):
     return render(request, 'core/login.html', context)
 
 @login_required
+def profile(request):
+    user = request.user
+    upload_count = Bill.objects.filter(user=user).count()
+    
+    # Determine badges based on upload count
+    badges = []
+    if upload_count >= 1:
+        badges.append("Receipt Rookie")
+    if upload_count >= 10:
+        badges.append("Ledger Learner")
+    if upload_count >= 20:
+        badges.append("Warranty Watcher")
+    if upload_count >= 30:
+        badges.append("Bill Guardian")
+    if upload_count >= 40:
+        badges.append("Archive Ace")
+    if upload_count >= 50:
+        badges.append("Financial Fortress")
+
+    context = {
+        'user': user,
+        'upload_count': upload_count,
+        'badges': badges,
+        'join_date': user.date_joined.date(),  # Join date for profile
+    }
+    return render(request, 'core/profile.html', context)
+
+@login_required
 def logout(request):
     auth_logout(request)
     messages.success(request, 'Logged out successfully!')

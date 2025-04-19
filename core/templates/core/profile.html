@@ -1,0 +1,248 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block content %}
+<div class="profile-container">
+    <!-- User Details -->
+    <div class="profile-header">
+        <span class="welcome-text">Welcome,</span>
+        <h1 class="username">{{ user.username }}</h1>
+    </div>
+    
+    <div class="profile-stats">
+        <div class="stat-item">
+            <span class="stat-label">Joined</span>
+            <span class="stat-value">{{ join_date }}</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Total Uploads</span>
+            <span class="stat-value">{{ upload_count }}</span>
+        </div>
+    </div>
+
+    <!-- Badges Section -->
+    <div class="badges-section">
+        <h3>Your Achievements</h3>
+        <div class="badge-slider">
+            {% for badge in badges %}
+                <div class="badge-item">
+                    {% if badge == "Receipt Rookie" %}
+                        <img src="{% static 'badges/receipt_rookie.png' %}" alt="Receipt Rookie Badge" class="badge-image">
+                        <p>Receipt Rookie</p>
+                        <span class="badge-description">1 Upload</span>
+                    {% elif badge == "Ledger Learner" %}
+                        <img src="{% static 'badges/ledger_learner.png' %}" alt="Ledger Learner Badge" class="badge-image">
+                        <p>Ledger Learner</p>
+                        <span class="badge-description">10 Uploads</span>
+                    {% elif badge == "Warranty Watcher" %}
+                        <img src="{% static 'badges/warranty_watcher.png' %}" alt="Warranty Watcher Badge" class="badge-image">
+                        <p>Warranty Watcher</p>
+                        <span class="badge-description">20 Uploads</span>
+                    {% elif badge == "Bill Guardian" %}
+                        <img src="{% static 'badges/bill_guardian.png' %}" alt="Bill Guardian Badge" class="badge-image">
+                        <p>Bill Guardian</p>
+                        <span class="badge-description">30 Uploads</span>
+                    {% elif badge == "Archive Ace" %}
+                        <img src="{% static 'badges/archive_ace.png' %}" alt="Archive Ace Badge" class="badge-image">
+                        <p>Archive Ace</p>
+                        <span class="badge-description">40 Uploads</span>
+                    {% elif badge == "Financial Fortress" %}
+                        <img src="{% static 'badges/financial_fortress.png' %}" alt="Financial Fortress Badge" class="badge-image">
+                        <p>Financial Fortress</p>
+                        <span class="badge-description">50 Uploads</span>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            {% if not badges %}
+                <p class="no-badges">No badges earned yet. Start uploading bills to earn your first badge!</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .profile-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 3rem 2rem;
+    }
+
+    .profile-header {
+        margin-bottom: 2.5rem;
+        text-align: center;
+    }
+
+    .welcome-text {
+        color: var(--text-muted);
+        font-size: 1.2rem;
+        font-weight: 400;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .username {
+        color: var(--primary);
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .profile-stats {
+        display: flex;
+        justify-content: center;
+        gap: 3rem;
+        margin-bottom: 3rem;
+    }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .stat-label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-value {
+        color: var(--text-primary);
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    .badges-section {
+        padding: 0;
+    }
+
+    .badges-section h3 {
+        color: var(--text-primary);
+        margin-bottom: 1.5rem;
+        font-size: 1.5rem;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    .badge-slider {
+        display: flex;
+        overflow-x: auto;
+        gap: 1.5rem;
+        padding: 1rem 0.5rem;
+        scrollbar-width: thin;
+        scrollbar-color: var(--primary-light) var(--gray-200);
+    }
+
+    .badge-slider::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .badge-slider::-webkit-scrollbar-track {
+        background: var(--gray-200);
+        border-radius: 10px;
+    }
+
+    .badge-slider::-webkit-scrollbar-thumb {
+        background-color: var(--primary-light);
+        border-radius: 10px;
+    }
+
+    .badge-item {
+        flex: 0 0 auto;
+        text-align: center;
+        min-width: 120px;
+        transition: transform 0.2s ease;
+    }
+
+    .badge-item:hover {
+        transform: translateY(-5px);
+    }
+
+    .badge-image {
+        width: 90px;
+        height: 90px;
+        object-fit: contain;
+        margin-bottom: 0.75rem;
+        filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.1));
+    }
+
+    .badge-item p {
+        color: var(--text-primary);
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0 0 0.25rem 0;
+    }
+
+    .badge-description {
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        display: block;
+    }
+
+    .no-badges {
+        color: var(--text-muted);
+        text-align: center;
+        width: 100%;
+        font-style: italic;
+        padding: 1.5rem 0;
+    }
+
+    @media (max-width: 768px) {
+        .profile-container {
+            padding: 2rem 1rem;
+        }
+
+        .profile-stats {
+            gap: 2rem;
+        }
+
+        .username {
+            font-size: 2rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .profile-stats {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .stat-item {
+            flex-direction: row;
+            justify-content: space-between;
+            width: 100%;
+            padding: 0.5rem 1rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const badgeSlider = document.querySelector('.badge-slider');
+        if (badgeSlider && badgeSlider.scrollWidth > badgeSlider.clientWidth) {
+            const scrollToEnd = () => {
+                const maxScroll = badgeSlider.scrollWidth - badgeSlider.clientWidth;
+                let currentPosition = 0;
+                
+                const scrollStep = () => {
+                    currentPosition += 1;
+                    badgeSlider.scrollLeft = currentPosition;
+                    
+                    if (currentPosition < maxScroll) {
+                        requestAnimationFrame(scrollStep);
+                    } else {
+                        setTimeout(() => {
+                            badgeSlider.scrollTo({ left: 0, behavior: 'smooth' });
+                        }, 2000);
+                    }
+                };
+                
+                setTimeout(() => {
+                    scrollStep();
+                }, 3000);
+            };
+            
+            setTimeout(scrollToEnd, 2000);
+        }
+    });
+</script>
+{% endblock %}
